@@ -1,6 +1,10 @@
+import 'dart:io';
+
 import 'package:chat_app/chat_page.dart';
+import 'package:chat_app/models/alert.dart';
 import 'package:chat_app/providers/user_provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:chat_app/providers/auth_provider.dart';
 import 'package:chat_app/providers/chat_provider.dart';
@@ -18,11 +22,92 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  FirebaseMessaging _messaging = FirebaseMessaging();
+  GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   List<User> users = [];
+
   @override
   void initState() {
-    Provider.of<ChatProvider>(context, listen: false).readChats();
+    // if (Platform.isIOS) {
+    //   this._messaging.requestNotificationPermissions(
+    //         IosNotificationSettings(
+    //           sound: true,
+    //           alert: true,
+    //           badge: true,
+    //         ),
+    //       );
+    //   this._messaging.onIosSettingsRegistered.listen(
+    //       (settings) => print('Firebase Messaging Registered: $settings'));
+    // }
 
+    // this
+    //     ._messaging
+    //     .getToken()
+    //     .then((token) async => await this._saveToken(token: token));
+
+    // this
+    //     ._messaging
+    //     .onTokenRefresh
+    //     .listen((token) async => await this._saveToken(token: token));
+
+    // this._messaging.configure(onMessage: (map) async {
+    //   // WHEN APP IS OPENED
+    //   Alert alert = Alert.model(map: map);
+    //   if (alert.data.tag == 'chat') {
+    //     this._scaffoldKey.currentState.showSnackBar(
+    //           SnackBar(
+    //             content: Text(alert.notification.body),
+    //             action: SnackBarAction(
+    //               label: 'Open Chat',
+    //               onPressed: () async {
+    //                 var ap = Provider.of<AuthProvider>(context, listen: false);
+    //                 var cp = Provider.of<ChatProvider>(context, listen: false);
+    //                 Chat chat;
+
+    //                 if (cp.chats.indexWhere(
+    //                         (element) => element.chatID == alert.data.chatID) ==
+    //                     -1) {
+    //                   chat = await cp.readChat(chatID: alert.data.chatID);
+    //                 } else {
+    //                   chat = cp.chats[cp.chats.indexWhere(
+    //                       (element) => element.chatID == alert.data.chatID)];
+    //                 }
+
+    //                 Navigator.push(
+    //                   context,
+    //                   MaterialPageRoute(
+    //                     builder: (context) => ChatPage(
+    //                       user: this.users[this.users.indexWhere((element) =>
+    //                           element.userID ==
+    //                           chat.users[chat.users.indexWhere(
+    //                               (element) => element != ap.user.uid)])],
+    //                       chat: chat,
+    //                     ),
+    //                     fullscreenDialog: true,
+    //                   ),
+    //                 );
+
+    //                 print('Open Chat');
+    //               },
+    //             ),
+    //           ),
+    //         );
+    //   } else {
+    //     this._scaffoldKey.currentState.showSnackBar(
+    //           SnackBar(
+    //             content: Text(alert.notification.body),
+    //           ),
+    //         );
+    //   }
+    // }, onLaunch: (map) async {
+    //   // APP IS NOT OPENED
+    //   // Alert alert = Alert.model(map: map);
+    // }, onResume: (map) async {
+    //   // APP IS IN BACKGROUND
+    //   // Alert alert = Alert.model(map: map);
+    // });
+
+    Provider.of<ChatProvider>(context, listen: false).readChats();
     super.initState();
   }
 
@@ -35,7 +120,11 @@ class _HomePageState extends State<HomePage> {
     return DefaultTabController(
       length: 2,
       child: Scaffold(
+        key: this._scaffoldKey,
         appBar: AppBar(
+          title: Text(
+            'Hello, ${ap.user.email}',
+          ),
           actions: [
             FlatButton(
               child: Text(
@@ -53,7 +142,6 @@ class _HomePageState extends State<HomePage> {
               Tab(icon: Icon(Icons.chat)),
             ],
           ),
-          title: Text('Chats'),
         ),
         body: TabBarView(
           children: [
@@ -74,9 +162,12 @@ class _HomePageState extends State<HomePage> {
                   return ListView.builder(
                     padding: EdgeInsets.only(left: 25.0, right: 25.0),
                     itemCount: this.users.length,
-                    itemBuilder: (context, index) => userItem(
-                      user: this.users[index],
-                    ),
+                    itemBuilder: (context, index) =>
+                        this.users[index].userID == ap.user.uid
+                            ? Container()
+                            : userItem(
+                                user: this.users[index],
+                              ),
                   );
                 },
               ),
@@ -137,8 +228,7 @@ class _HomePageState extends State<HomePage> {
 
         if (chat == null) {
           var now = FieldValue.serverTimestamp();
-
-          chat = Chat(
+          Chat newChat = Chat(
             chatID: cp.collection.doc().id,
             users: [
               ap.user.uid,
@@ -153,19 +243,30 @@ class _HomePageState extends State<HomePage> {
             updatedAt: now,
           );
 
-          await cp.createChat(chat: chat);
-        }
+          await cp.createChat(chat: newChat);
 
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ChatPage(
-              user: user,
-              chat: chat,
+          await cp.findChat(users: newChat.users).then((chat) => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ChatPage(
+                    user: user,
+                    chat: chat,
+                  ),
+                  fullscreenDialog: true,
+                ),
+              ));
+        } else {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ChatPage(
+                user: user,
+                chat: chat,
+              ),
+              fullscreenDialog: true,
             ),
-            fullscreenDialog: true,
-          ),
-        );
+          );
+        }
       },
     );
   }
@@ -239,4 +340,14 @@ class _HomePageState extends State<HomePage> {
       ),
     );
   }
+
+  // Future _saveToken({String token}) async {
+  //   var ap = Provider.of<AuthProvider>(context, listen: false);
+  //   var up = Provider.of<UserProvider>(context, listen: false);
+  //   await up.collection.doc(ap.user.uid).collection('tokens').doc('fcm').set(
+  //     <String, dynamic>{
+  //       'tokens': FieldValue.arrayUnion([token]),
+  //     },
+  //   );
+  // }
 }

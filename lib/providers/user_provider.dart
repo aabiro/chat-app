@@ -7,6 +7,8 @@ class UserProvider extends ChangeNotifier {
   CollectionReference _collection =
       FirebaseFirestore.instance.collection('users');
 
+  CollectionReference get collection => this._collection;
+
   Future createUser({String uid, String email}) async {
     return await this._collection.doc(uid).set(<String, dynamic>{
       'email': email,

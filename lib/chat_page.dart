@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:chat_app/funcs.dart';
 import 'package:chat_app/providers/auth_provider.dart';
 import 'package:chat_app/providers/chat_provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -391,6 +392,13 @@ class _ChatPageState extends State<ChatPage> {
       chat: chat,
     )
         .then((value) async {
+      // Funcs.notifyUserOf(
+      //     functionName: 'chatNotification',
+      //     data: <String, dynamic>{
+      //       'toUserID': widget.user.userID,
+      //       'fromUserEmail': ap.user.email,
+      //       'chatID': widget.chat.chatID,
+      //     });
       if (mounted)
         setState(() {
           this._msgTEC.text = '';

@@ -20,6 +20,24 @@ class ChatProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  Future<Chat> readChat({String chatID}) async {
+    DocumentSnapshot ds = await this._collection.doc(chatID).get();
+    return Chat.model(ds: ds, id: ds.id, map: ds.data());
+  }
+
+  Future<Chat> findChat({List<String> users}) async {
+    List<DocumentSnapshot> docs =
+        (await this.collection.where('users', arrayContainsAny: users).get())
+            .docs;
+
+    if (docs.isNotEmpty) {
+      return Chat.model(
+          ds: docs.first, id: docs.first.id, map: docs.first.data());
+    } else {
+      return null;
+    }
+  }
+
   readChats() {
     var query = this
         .collection
@@ -35,58 +53,58 @@ class ChatProvider with ChangeNotifier {
     this._chatsStream = query.snapshots().listen(
           (data) => data.docs.isEmpty
               ? () {}
-              : data.docChanges.forEach((change) {
-                  if (change.type == DocumentChangeType.added) {
-                    print('CHAT ADDED');
-                    this.chats.add(
-                          Chat.model(
-                            ds: change.doc,
-                            id: change.doc.id,
-                            map: change.doc.data(),
-                          ),
-                        );
+              : data.docChanges.forEach(
+                  (change) {
+                    if (change.type == DocumentChangeType.added) {
+                      print('CHAT ADDED');
+                      this.chats.add(
+                            Chat.model(
+                              ds: change.doc,
+                              id: change.doc.id,
+                              map: change.doc.data(),
+                            ),
+                          );
 
-                    notifyListeners();
-                  }
-                  if (change.type == DocumentChangeType.modified) {
-                    print('CHAT MODIFED');
-                    Chat chat = Chat.model(
-                      ds: change.doc,
-                      id: change.doc.id,
-                      map: change.doc.data(),
-                    );
+                      notifyListeners();
+                    }
+                    if (change.type == DocumentChangeType.modified) {
+                      print('CHAT MODIFED');
+                      Chat chat = Chat.model(
+                        ds: change.doc,
+                        id: change.doc.id,
+                        map: change.doc.data(),
+                      );
 
-                    int index = this
-                        .chats
-                        .indexWhere((element) => element.chatID == chat.chatID);
+                      int index = this.chats.indexWhere(
+                          (element) => element.chatID == chat.chatID);
 
-                    List<Message> messages = this.chats[index].messages;
+                      List<Message> messages = this.chats[index].messages;
 
-                    this.chats[index] = chat;
-                    this.chats[index].messages = messages;
+                      this.chats[index] = chat;
+                      this.chats[index].messages = messages;
 
-                    this
-                        .chats
-                        .sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+                      this
+                          .chats
+                          .sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
 
-                    notifyListeners();
-                  }
-                  if (change.type == DocumentChangeType.removed) {
-                    Chat chat = Chat.model(
-                      ds: change.doc,
-                      id: change.doc.id,
-                      map: change.doc.data(),
-                    );
+                      notifyListeners();
+                    }
+                    if (change.type == DocumentChangeType.removed) {
+                      Chat chat = Chat.model(
+                        ds: change.doc,
+                        id: change.doc.id,
+                        map: change.doc.data(),
+                      );
 
-                    int index = this
-                        .chats
-                        .indexWhere((element) => element.chatID == chat.chatID);
+                      int index = this.chats.indexWhere(
+                          (element) => element.chatID == chat.chatID);
 
-                    this.chats.removeAt(index);
+                      this.chats.removeAt(index);
 
-                    notifyListeners();
-                  }
-                }),
+                      notifyListeners();
+                    }
+                  },
+                ),
           onError: (e) => print(e),
         );
   }
