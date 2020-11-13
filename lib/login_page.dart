@@ -1,10 +1,8 @@
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:chat_app/providers/auth_provider.dart';
+import 'package:chat_app/providers/user_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
-
-import 'chat_page.dart';
-
-FirebaseAuth auth = FirebaseAuth.instance;
+import 'package:provider/provider.dart';
 
 class LoginPage extends StatefulWidget {
   @override
@@ -12,87 +10,93 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  TextEditingController emailController = TextEditingController();
-  TextEditingController passwordController = TextEditingController();
-
-  @override
-  void dispose() {
-    super.dispose();
-    emailController.dispose();
-    passwordController.dispose();
-  }
+  String email, pass;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(),
       body: SingleChildScrollView(
         child: Container(
           child: Column(
             children: [
-              SizedBox(
-                height: 50,
-              ),
-              Padding(
-                padding: EdgeInsets.all(20.0),
-                child: TextFormField(
-                  controller: emailController,
-                  decoration: InputDecoration(
-                    labelText: "Enter email",
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10.0),
-                    ),
-                  ),
-                ),
-              ),
-              Padding(
-                padding: EdgeInsets.all(20.0),
-                child: TextFormField(
-                  controller: passwordController,
-                  decoration: InputDecoration(
-                    labelText: "Enter password",
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10.0),
-                    ),
-                  ),
-                ),
-              ),
-              SizedBox(
-                height: 50,
-              ),
-              _registerButton(emailController.text, passwordController.text),
+              SizedBox(height: 50),
+              this.buildInputField(hintText: 'Email'),
+              this.buildInputField(hintText: 'Password', obsecure: true),
+              SizedBox(height: 25),
+              _loginButton(context),
+              _registerButton(context),
             ],
           ),
         ),
       ),
     );
   }
-}
 
-Widget _registerButton(String email, String password) {
-  return Padding(
-    padding: const EdgeInsets.all(30.0),
-    child: OutlineButton(
-      onPressed: () async {
-        await auth
-            .createUserWithEmailAndPassword(email: email, password: password)
-            .then(
-              (resp) => {
-                if (resp != null)
-                  MaterialPageRoute(
-                    builder: (context) => ChatListPage(),
-                  ),
-              },
-            );
-      },
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(30.0),
-            child: Text("Register"),
+  Widget buildInputField({
+    String hintText,
+    bool obsecure = false,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 25.0, right: 25.0, bottom: 25.0),
+      child: TextFormField(
+        obscureText: obsecure,
+        decoration: InputDecoration(
+          labelText: hintText,
+          hintStyle: TextStyle(
+            color: Color(0xff2196F3),
           ),
-        ],
+        ),
+        onChanged: (s) => obsecure ? this.pass = s : this.email = s,
       ),
-    ),
-  );
+    );
+  }
+
+  Widget _loginButton(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 25.0, right: 25.0, bottom: 25.0),
+      child: OutlineButton(
+        onPressed: () async =>
+            await Provider.of<AuthProvider>(context, listen: false)
+                .login(email: this.email, password: this.pass),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: Text("Login"),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _registerButton(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 25.0, right: 25.0, bottom: 25.0),
+      child: OutlineButton(
+        onPressed: () async =>
+            await Provider.of<AuthProvider>(context, listen: false)
+                .register(email: this.email, password: this.pass)
+                .then(
+                  (user) async =>
+                      await Provider.of<UserProvider>(context, listen: false)
+                          .createUser(
+                    uid: user.uid,
+                    email: this.email,
+                  ),
+                ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: Text("Register"),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
