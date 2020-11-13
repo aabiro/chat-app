@@ -126,53 +126,53 @@ class ChatProvider with ChangeNotifier {
     batch.commit();
   }
 
-  // Future<List<Message>> prevMessages({Chat chat, int limit = 5}) async {
-  //   Query query = chat.messages.isEmpty
-  //       ? this
-  //           .collection
-  //           .doc(chat.chatID)
-  //           .collection('messages')
-  //           .orderBy('createdAt', descending: true)
-  //           .limit(limit)
-  //       : this
-  //           .collection
-  //           .doc(chat.chatID)
-  //           .collection('messages')
-  //           .orderBy('createdAt', descending: true)
-  //           .startAfterDocument(chat.messages.first.ds)
-  //           .limit(limit);
+  Future<List<Message>> prevMessages({Chat chat, int limit = 5}) async {
+    Query query = chat.messages.isEmpty
+        ? this
+            .collection
+            .doc(chat.chatID)
+            .collection('messages')
+            .orderBy('createdAt', descending: true)
+            .limit(limit)
+        : this
+            .collection
+            .doc(chat.chatID)
+            .collection('messages')
+            .orderBy('createdAt', descending: true)
+            .startAfterDocument(chat.messages.first.ds)
+            .limit(limit);
 
-  //   return (await query.get())
-  //       .docs
-  //       .map(
-  //         (element) => Message.model(
-  //           ds: element,
-  //           id: element.id,
-  //           map: element.data(),
-  //         ),
-  //       )
-  //       .toList();
-  // }
+    return (await query.get())
+        .docs
+        .map(
+          (element) => Message.model(
+            ds: element,
+            id: element.id,
+            map: element.data(),
+          ),
+        )
+        .toList();
+  }
 
-  // Future<List<Message>> missingMessages({Chat chat}) async {
-  //   Query query = this
-  //       .collection
-  //       .doc(chat.chatID)
-  //       .collection('messages')
-  //       .orderBy('createdAt', descending: false)
-  //       .startAfter([chat.messages.last.createdAt]);
+  Future<List<Message>> missingMessages({Chat chat}) async {
+    Query query = this
+        .collection
+        .doc(chat.chatID)
+        .collection('messages')
+        .orderBy('createdAt', descending: false)
+        .startAfter([chat.messages.last.createdAt]);
 
-  //   return (await query.get())
-  //       .docs
-  //       .map(
-  //         (documentSnapshot) => Message.model(
-  //           ds: documentSnapshot,
-  //           id: documentSnapshot.id,
-  //           map: documentSnapshot.data(),
-  //         ),
-  //       )
-  //       .toList();
-  // }
+    return (await query.get())
+        .docs
+        .map(
+          (documentSnapshot) => Message.model(
+            ds: documentSnapshot,
+            id: documentSnapshot.id,
+            map: documentSnapshot.data(),
+          ),
+        )
+        .toList();
+  }
 
   @override
   void dispose() {

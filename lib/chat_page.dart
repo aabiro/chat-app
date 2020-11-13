@@ -28,22 +28,22 @@ class _ChatPageState extends State<ChatPage> {
   StreamSubscription _streamSubscription;
   ScrollController _scrollController = ScrollController();
   TextEditingController _msgTEC = TextEditingController();
-  // bool _isFetching = false;
-  // bool _didFetch = false;
+  bool _isFetching = false;
+  bool _didFetch = false;
 
   @override
   void initState() {
-    // if (widget.chat.messages.isEmpty) {
-    //   this._prevMessages().then((_) {
-    this._initMessages();
-    //     this._scrollToBtm();
-    //   });
-    // } else {
-    //   this._missingMessages().then((_) {
-    //     this._initMessages();
-    //     this._scrollToBtm();
-    //   });
-    // }
+    if (widget.chat.messages.isEmpty) {
+      this._prevMessages().then((_) {
+        this._initMessages();
+        this._scrollToBtm();
+      });
+    } else {
+      this._missingMessages().then((_) {
+        this._initMessages();
+        this._scrollToBtm();
+      });
+    }
 
     super.initState();
   }
@@ -78,7 +78,7 @@ class _ChatPageState extends State<ChatPage> {
                   Expanded(
                     child: RefreshIndicator(
                       onRefresh: () async {
-                        // await this._prevMessages();
+                        await this._prevMessages();
                         return;
                       },
                       child: ListView.builder(
@@ -266,61 +266,61 @@ class _ChatPageState extends State<ChatPage> {
           curve: Curves.ease);
   }
 
-  // Future _prevMessages() async {
-  //   if (!this._isFetching && !this._didFetch) {
-  //     if (mounted) setState(() => this._isFetching = true);
-  //     print('Getting Prev Messages...');
+  Future _prevMessages() async {
+    if (!this._isFetching && !this._didFetch) {
+      if (mounted) setState(() => this._isFetching = true);
+      print('Getting Prev Messages...');
 
-  //     List<Message> messages =
-  //         await Provider.of<ChatProvider>(context, listen: false)
-  //             .prevMessages(chat: widget.chat);
+      List<Message> messages =
+          await Provider.of<ChatProvider>(context, listen: false)
+              .prevMessages(chat: widget.chat);
 
-  //     if (messages != null) {
-  //       int oldCount = widget.chat.messages.length;
+      if (messages != null) {
+        int oldCount = widget.chat.messages.length;
 
-  //       widget.chat.messages.addAll(messages);
-  //       widget.chat.messages.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+        widget.chat.messages.addAll(messages);
+        widget.chat.messages.sort((a, b) => a.createdAt.compareTo(b.createdAt));
 
-  //       int newCount = widget.chat.messages.length;
+        int newCount = widget.chat.messages.length;
 
-  //       if (oldCount == newCount) this._didFetch = true;
+        if (oldCount == newCount) this._didFetch = true;
 
-  //       if (mounted) setState(() => this._isFetching = false);
-  //     }
+        if (mounted) setState(() => this._isFetching = false);
+      }
 
-  //     this._scrollToBtm();
-  //     print('Getting Prev Messages Complete.');
-  //   }
-  // }
+      this._scrollToBtm();
+      print('Getting Prev Messages Complete.');
+    }
+  }
 
-  // Future _missingMessages() async {
-  //   if (!this._isFetching && !this._didFetch) {
-  //     if (mounted) setState(() => this._isFetching = true);
-  //     print('Getting Missing Messages...');
+  Future _missingMessages() async {
+    if (!this._isFetching && !this._didFetch) {
+      if (mounted) setState(() => this._isFetching = true);
+      print('Getting Missing Messages...');
 
-  //     List<Message> messages =
-  //         await Provider.of<ChatProvider>(context, listen: false)
-  //             .missingMessages(chat: widget.chat);
+      List<Message> messages =
+          await Provider.of<ChatProvider>(context, listen: false)
+              .missingMessages(chat: widget.chat);
 
-  //     if (messages != null) {
-  //       print('LENGTH');
-  //       print(messages.length);
-  //       int oldCount = widget.chat.messages.length;
+      if (messages != null) {
+        print('LENGTH');
+        print(messages.length);
+        int oldCount = widget.chat.messages.length;
 
-  //       widget.chat.messages.addAll(messages);
-  //       widget.chat.messages.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+        widget.chat.messages.addAll(messages);
+        widget.chat.messages.sort((a, b) => a.createdAt.compareTo(b.createdAt));
 
-  //       int newCount = widget.chat.messages.length;
+        int newCount = widget.chat.messages.length;
 
-  //       if (oldCount == newCount) this._didFetch = true;
+        if (oldCount == newCount) this._didFetch = true;
 
-  //       if (mounted) setState(() => this._isFetching = false);
-  //     }
+        if (mounted) setState(() => this._isFetching = false);
+      }
 
-  //     this._scrollToBtm();
-  //     print('Getting Missing Messages Complete.');
-  //   }
-  // }
+      this._scrollToBtm();
+      print('Getting Missing Messages Complete.');
+    }
+  }
 
   _initMessages() {
     print('Init Live Messages...');
